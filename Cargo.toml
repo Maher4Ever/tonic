@@ -6,6 +6,7 @@ members = [
   "tonic-types",
   "tonic-reflection",
   "tonic-web", # Non-published crates
+  "protoc-gen-tonic",
   "examples",
   "interop", # Tests
   "tests/included_service",
