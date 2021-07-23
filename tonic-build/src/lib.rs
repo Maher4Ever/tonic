@@ -90,7 +90,7 @@ pub use prost::{compile_protos, configure, Builder};
 use std::io::{self, Write};
 #[cfg(feature = "rustfmt")]
 #[cfg_attr(docsrs, doc(cfg(feature = "rustfmt")))]
-use std::process::{exit, Command};
+use std::process::{exit, Command, Stdio};
 
 /// Service code generation for client
 pub mod client;
@@ -251,6 +251,28 @@ pub fn fmt(out_dir: &str) {
             }
         }
     }
+}
+
+/// Format rust code with rustfmt
+#[cfg(feature = "rustfmt")]
+#[cfg_attr(docsrs, doc(cfg(feature = "rustfmt")))]
+pub fn fmt_str(s: String) -> String {
+    let mut child = Command::new(std::env::var("RUSTFMT").unwrap_or_else(|_| "rustfmt".to_owned()))
+        .arg("--edition")
+        .arg("2018")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("error running rustfmt");
+    let mut stdin = child.stdin.take().expect("error opening rustfmt stdin");
+    std::thread::spawn(move || stdin.write_all(s.as_bytes()).expect("error writing rustfmt input"));
+    let output = child.wait_with_output().expect("error reading rustfmt output");
+    if !output.status.success() {
+        io::stdout().write_all(&output.stdout).unwrap();
+        io::stderr().write_all(&output.stderr).unwrap();
+        exit(output.status.code().unwrap_or(1))
+    }
+    String::from_utf8(output.stdout).unwrap()
 }
 
 // Generate a singular line of a doc comment

@@ -1,6 +1,7 @@
 use super::{client, server, Attributes};
 use proc_macro2::TokenStream;
 use prost_build::{Config, Method, Service};
+use prost_types::compiler::*;
 use quote::ToTokens;
 use std::ffi::OsString;
 use std::io;
@@ -374,6 +375,38 @@ impl Builder {
         self
     }
 
+    #[doc(hidden)]
+    /// Configure the builder with the inlined options.
+    ///
+    /// Format is opt1=value,opt2=value
+    pub fn opts(mut self, opts: &str) -> Self {
+        let mut full_opt = String::new();
+        for opt in opts.split(',') {
+            full_opt.push_str(opt.strip_suffix('\\').unwrap_or(opt));
+            if opt.ends_with('\\') {
+                full_opt.push(',');
+                continue;
+            }
+
+            match full_opt.splitn(3, '=').collect::<Vec<_>>().as_slice() {
+                ["no_build_client"] => self.build_client = false,
+                ["no_build_server"] => self.build_server = false,
+                ["file_descriptor_set_path", v] => self.file_descriptor_set_path = Some(v.into()),
+                ["proto_path", v] => self.proto_path = v.to_string(),
+                ["no_emit_package"] => self.emit_package = false,
+                #[cfg(feature = "rustfmt")]
+                ["no_format"] => self.format = false,
+                [o] | [o, ..] if !prost_build::PROTOC_OPTS.contains(o) && !o.is_empty() => {
+                    eprintln!("tonic: Unknown option `{}`", full_opt);
+                }
+                _ => (),
+            }
+
+            full_opt = String::new();
+        }
+        self
+    }
+
     /// Compile the .proto files and execute code generation.
     pub fn compile(
         self,
@@ -401,6 +434,44 @@ impl Builder {
         let format = self.format;
 
         config.out_dir(out_dir.clone());
+        self.config(config).compile_protos(protos, includes)?;
+
+        #[cfg(feature = "rustfmt")]
+        {
+            if format {
+                super::fmt(out_dir.to_str().expect("Expected utf8 out_dir"));
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Compile `.proto` code into Rust code from a protoc build with additional code generator
+    /// code options.
+    pub fn compile_request_with_config(
+        self,
+        config: Config,
+        req: CodeGeneratorRequest,
+    ) -> CodeGeneratorResponse {
+        #[cfg(feature = "rustfmt")]
+        let format = self.format;
+
+        let mut res = self.config(config).compile_request(req);
+
+        #[cfg(feature = "rustfmt")]
+        if format {
+            for file in &mut res.file {
+                if file.name() == "Cargo.toml" { continue }
+                let mut content = None;
+                std::mem::swap(&mut content, &mut file.content);
+                file.content = content.map(|content| super::fmt_str(content));
+            }
+        }
+
+        res
+    }
+
+    fn config(self, mut config: Config) -> Config {
         if let Some(path) = self.file_descriptor_set_path.as_ref() {
             config.file_descriptor_set_path(path);
         }
@@ -426,15 +497,6 @@ impl Builder {
 
         config.service_generator(Box::new(ServiceGenerator::new(self)));
 
-        config.compile_protos(protos, includes)?;
-
-        #[cfg(feature = "rustfmt")]
-        {
-            if format {
-                super::fmt(out_dir.to_str().expect("Expected utf8 out_dir"));
-            }
-        }
-
-        Ok(())
+        config
     }
 }
