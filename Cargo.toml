@@ -22,3 +22,8 @@ members = [
     "tests/stream_conflict",
 ]
 
+[patch.crates-io]
+prost = { git = "https://github.com/Tuetuopay/prost", branch = "protoc-gen-0.7" }
+prost-build = { git = "https://github.com/Tuetuopay/prost", branch = "protoc-gen-0.7" }
+prost-derive = { git = "https://github.com/Tuetuopay/prost", branch = "protoc-gen-0.7" }
+prost-types = { git = "https://github.com/Tuetuopay/prost", branch = "protoc-gen-0.7" }
