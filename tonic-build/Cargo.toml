@@ -17,6 +17,7 @@ keywords = ["rpc", "grpc", "async", "codegen", "protobuf"]
 
 [dependencies]
 prost-build = { version = "0.7", optional = true }
+prost-types = { version = "0.7", optional = true }
 syn = "1.0"
 quote = "1.0"
 proc-macro2 = "1.0"
@@ -25,7 +26,7 @@ proc-macro2 = "1.0"
 default = ["transport", "rustfmt", "prost"]
 rustfmt = []
 transport = []
-prost = ["prost-build"]
+prost = ["prost-build", "prost-types"]
 
 [package.metadata.docs.rs]
 all-features = true
