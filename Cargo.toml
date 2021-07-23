@@ -5,6 +5,7 @@ members = [
     "tonic-health",
     "tonic-types",
     "tonic-reflection",
+    "protoc-gen-tonic",
 
     # Non-published crates
     "examples",
