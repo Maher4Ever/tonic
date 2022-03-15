@@ -25,7 +25,7 @@ members = [
 ]
 
 [patch.crates-io]
-prost = { git = "https://github.com/Tuetuopay/prost", branch = "protoc-gen" }
-prost-build = { git = "https://github.com/Tuetuopay/prost", branch = "protoc-gen" }
-prost-derive = { git = "https://github.com/Tuetuopay/prost", branch = "protoc-gen" }
-prost-types = { git = "https://github.com/Tuetuopay/prost", branch = "protoc-gen" }
+prost = { git = "https://github.com/Maher4Ever/prost", branch = "fix/regex-unicode" }
+prost-build = { git = "https://github.com/Maher4Ever/prost", branch = "fix/regex-unicode" }
+prost-derive = { git = "https://github.com/Maher4Ever/prost", branch = "fix/regex-unicode" }
+prost-types = { git = "https://github.com/Maher4Ever/prost", branch = "fix/regex-unicode" }
